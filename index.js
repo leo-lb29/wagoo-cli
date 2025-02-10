@@ -1,19 +1,22 @@
+#!/usr/bin/env node
+
 import { Command } from "commander";
 import { execSync } from "child_process";
 import fs from "fs";
 import readline from "readline";
 import { fileURLToPath } from "url";
 import path from "path";
+import hidefile from "hidefile";
 
 const program = new Command();
 
-// Create the interface for user input
+// Créer l'interface pour l'entrée utilisateur
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
-// Function to check if a command is available
+// Fonction pour vérifier si une commande est disponible
 const checkCommand = (cmd) => {
   try {
     execSync(cmd, { stdio: "ignore" });
@@ -23,192 +26,169 @@ const checkCommand = (cmd) => {
   }
 };
 
-// Check if the installation has already been done
+// Vérifier si l'installation a déjà été effectuée
 const checkIfInstalled = () => {
-  const baxooConfigPath = path.resolve("baxoo-app", ".baxoo", "config.json");
+  const wagooConfigPath = path.resolve("wagoo-app", ".wagoo", "config.json");
+  const wagooInConfigPath = path.resolve(".wagoo", "config.json");
 
-  if (fs.existsSync(baxooConfigPath)) {
-    const configContent = fs.readFileSync(baxooConfigPath, "utf-8");
+  // Vérifie si l'un des fichiers de config existe et si le répertoire .wagoo est présent
+  if (fs.existsSync(wagooConfigPath)) {
+    const configContent = fs.readFileSync(wagooConfigPath, "utf-8");
     const config = JSON.parse(configContent);
     if (config.status === "installed") {
-      console.log("⚠️ The project is already installed.");
-      return true;
+      return true; // Déjà installé
     }
+  } else if (fs.existsSync(wagooInConfigPath)) {
+    const configContent = fs.readFileSync(wagooInConfigPath, "utf-8");
+    const config = JSON.parse(configContent);
+    if (config.status === "installed") {
+      return true; // Déjà installé
+    }
+  } else {
+    // Si les fichiers de config ne sont pas trouvés, l'installation n'est pas effectuée
+    console.log("⚠️ wagoo n'est pas installé.");
+    return false; // Pas installé
   }
-  return false;
+
+  console.log("⚠️ wagoo n'est pas installé.");
+  return false; // Pas installé
 };
 
-// Command to install dependencies and configure the project
+
+
+// Commande pour installer les dépendances et configurer le projet
 program
   .command("new")
-  .description("Install dependencies and configure the project")
+  .description("Installer les dépendances et configurer le projet")
   .action(() => {
     try {
-      // Check if the project is already installed
+      // Vérifier si le projet est déjà installé
       if (checkIfInstalled()) {
         console.log(
-          "❌ Aborting installation, as the project is already installed."
+          "❌ Abandon de l'installation, car le projet est déjà installé."
         );
         rl.close();
         process.exit(1);
       }
 
-      const repoPath = "baxoo-app"; // Path where the repo should be cloned
+      const repoPath = "wagoo-app"; // Chemin où le repo doit être cloné
+      const wagooAppPath = path.resolve("wagoo-app"); // Définir le chemin pour wagoo-app
+      const wagooDashAppPath = path.resolve("wagoo-app/dash"); // Définir le chemin pour wagoo-app
 
-      // Check if the repository directory already exists
-      if (fs.existsSync(repoPath)) {
-        const files = fs.readdirSync(repoPath);
-        if (files.length > 0) {
-          console.error(
-            `❌ The directory '${repoPath}' is not empty. Please ensure it's empty before cloning.`
-          );
-          process.exit(1);
-        }
-        console.log(
-          `⚠️ The directory '${repoPath}' already exists but is empty, proceeding with clone...`
-        );
-      } else {
-        console.log(
-          `🔄 Directory '${repoPath}' does not exist, proceeding with clone...`
-        );
-      }
-
-      console.log("📥 Cloning the repository...");
+      console.log("📥 Clonage du repository...");
       try {
-        execSync("git clone https://github.com/leo-lb29/baxoo-app.git", {
+        // Décommentez cette ligne pour effectuer le clonage réel si vous avez l'autorisation
+        execSync("git clone https://github.com/leo-lb29/wagoo-app.git", {
           stdio: "inherit",
         });
-        console.log("✅ Repo 'baxoo-app' cloned successfully.");
+        console.log("✅ Repo 'wagoo-app' cloné avec succès.");
 
-        // Install dependencies for the main project
-        console.log("📦 Installing dependencies...");
-        process.chdir("baxoo-app/dash");
+        // Installer les dépendances du projet principal
+        console.log("📦 Installation des dépendances...");
+
+        // Changer de répertoire pour installer les dépendances de 'dash'
+        const dashPath = path.join(wagooAppPath, "dash");
+        process.chdir(dashPath);
         execSync("npm install", { stdio: "ignore" });
         execSync("composer install", { stdio: "ignore" });
 
-        process.chdir("baxoo-app/app_desktop");
+        // Changer de répertoire pour installer les dépendances de 'app_desktop'
+        const appDesktopPath = path.join(wagooAppPath, "app_desktop");
+        process.chdir(appDesktopPath);
         execSync("npm install", { stdio: "ignore" });
-        execSync("composer install", { stdio: "ignore" });
-        app_desktop;
 
-        // Configure the .env file
-        console.log("⚙️ Configuring the application...");
-        process.chdir("allcode/config");
+        // Copier le fichier .env
+        const configPath = path.join(wagooAppPath, "dash", "allcode", "config");
+        process.chdir(configPath);
         fs.copyFileSync(".env.example", ".env");
 
-        // Install dependencies for the static project
-        console.log("📦 Installing static project dependencies...");
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
-        const staticPath = path.resolve(__dirname, "baxoo-app/static/v1/dash");
-
+        // Installer les dépendances du projet statique
+        console.log(" Installation des dépendances du projet statique...");
+        const staticPath = path.join(wagooAppPath, "static", "v1", "dash");
         if (fs.existsSync(staticPath)) {
           process.chdir(staticPath);
           execSync("npm install", { stdio: "ignore" });
         } else {
-          console.error(`❌ Directory ${staticPath} does not exist.`);
+          console.error(`❌ Le répertoire ${staticPath} n'existe pas.`);
           process.exit(1);
         }
 
-        // Mark the installation as completed with a JSON file
+        // Marquer l'installation comme terminée avec un fichier JSON
 
-        // Créer le dossier .baxoo dans baxoo-app
-        if (!fs.existsSync(path.resolve(__dirname, "baxoo-app", ".baxoo"))) {
-          fs.mkdirSync(path.resolve(__dirname, "baxoo-app", ".baxoo"));
+        const wagooDir = path.resolve(wagooAppPath, ".wagoo");
+        if (!fs.existsSync(wagooDir)) {
+          fs.mkdirSync(wagooDir);
+          hidefile.hideSync(wagooDir);
         }
-
-        // Configuration à écrire dans le fichier config.json
-        const config = {
-          status: "installed",
-        };
-
-        // Écrire le fichier config.json dans les deux dossiers .baxoo
+        // Configuration pour écrire dans le fichier config.json
+        const config = { status: "installed" };
         fs.writeFileSync(
-          path.resolve(__dirname, "baxoo-app", ".baxoo", "config.json"),
+          path.resolve(wagooDir, "config.json"),
           JSON.stringify(config, null, 2)
         );
 
-        console.log("🎉 Installation completed!");
+           // Marquer l'installation comme terminée avec un fichier JSON
+
+           const dashDir = path.resolve(wagooDashAppPath, ".dash");
+           if (!fs.existsSync(dashDir)) {
+             fs.mkdirSync(dashDir);
+             hidefile.hideSync(dashDir);
+           }
+           // Configuration pour écrire dans le fichier config.json
+           const configDash = { status: "installed" };
+           fs.writeFileSync(
+             path.resolve(dashDir, "config.json"),
+             JSON.stringify(configDash, null, 2)
+           );
+
+        console.log("🎉 Installation terminée!");
 
         rl.close();
         process.exit(0);
       } catch (error) {
-        console.log(
-          "❌ You do not have permission to clone the Baxoo repository."+error
+        console.error(
+          "❌ Vous n'avez pas la permission de cloner le repository wagoo."
         );
+        console.error(error);
         process.exit(1);
       }
     } catch (error) {
-      console.error("❌ An error occurred during installation.");
+      console.error("❌ Une erreur s'est produite lors de l'installation.");
       console.error(error);
       rl.close();
       process.exit(1);
     }
   });
 
-// Command to build the project for Windows
-// program
-//   .command("build")
-//   .description("Build the project")
-//   .option("-w, --win", "Build the project for Windows")
-//   .action((cmd) => {
-//     try {
-//       if (cmd.win) {
-//         console.log("🔨 Building the project for Windows...");
-//         // Ajoute ta logique de construction pour Windows ici
-//       } else {
-//         console.log("🔨 Building the project...");
-//         // Ajoute ta logique de construction générique ici
-//       }
-//       console.log("✅ Build completed successfully.");
-//       process.exit(1);
-//     } catch (error) {
-//       console.error("❌ An error occurred during the build process.");
-//       console.error(error);
-//       process.exit(1);
-//     }
-//   });
+
+// Commande pour lancer la génération du css
+
 program
   .command("css")
-  .description("Build the TailwindCSS project")
-  .option("-b, --build", "Execute the build action")  // Ajoute l'option --build
-  .action((cmd) => {
+  .description("Lancer tailwindcss pour générer le fichier css")
+  .action(() => {
     try {
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = path.dirname(__filename);
-      const baxooDir = path.resolve(__dirname, ".baxoo");
+      // Vérifier la présence du dossier .dash
+      const dashDirectory = path.join(process.cwd(), '.dash');
+      if (!fs.existsSync(dashDirectory)) {
+        console.error("❌ Cette commande ne fonctionne que dans un dossier du dashboard.");
+        process.exit(1); // Stoppe le processus si le dossier n'est pas présent
+      }
 
-      // Vérifie si le dossier .baxoo est présent dans le répertoire actuel
-      if (!fs.existsSync(baxooDir)) {
-        console.error(
-          "❌ Vous devez être dans un projet Baxoo pour exécuter cette commande."
-        );
+      console.log("🖋️ Chargement du css");
+
+      try {
+        execSync("npx tailwindcss -i ./assets/css/input.css -o ../static/v1/dash/css/output.css --watch", { stdio: "inherit" });
+      } catch (error) {
+        console.error("❌ Erreur lors de l'exécution de la commande tailwindcss.");
+        console.error(error);
         process.exit(1);
       }
-
-      // Si l'option --build est présente, on effectue une action différente
-      if (cmd.build) {
-        console.log("🚀 Starting the custom build action...");
-
-        // Ajoute ici la logique personnalisée pour le build
-        // Exemple : execSync("npm run build", { stdio: 'inherit' });
-      } else {
-        console.log("📦 Building the TailwindCSS...");
-
-        // Utiliser la commande TailwindCSS via execSync
-        execSync(
-          "npx tailwindcss -i ./src/input.css -o ./src/output.css --watch",
-          { stdio: "inherit" }
-        );
-      }
-
-      console.log("✅ Build completed successfully.");
     } catch (error) {
-      console.error("❌ An error occurred during the build process.");
+      console.error("❌ Une erreur s'est produite lors de l'installation.");
       console.error(error);
       process.exit(1);
     }
   });
-
 
 program.parse(process.argv);
