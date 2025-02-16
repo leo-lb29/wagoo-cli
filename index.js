@@ -54,8 +54,6 @@ const checkIfInstalled = () => {
   return false; // Pas installé
 };
 
-
-
 // Commande pour installer les dépendances et configurer le projet
 program
   .command("new")
@@ -92,6 +90,10 @@ program
         execSync("npm install", { stdio: "ignore" });
         execSync("composer install", { stdio: "ignore" });
 
+        const desktopApp = path.join(wagooAppPath, "desktop");
+        process.chdir(desktopApp);
+        execSync("npm install", { stdio: "ignore" });
+
         // Changer de répertoire pour installer les dépendances de 'app_desktop'
         const appDesktopPath = path.join(wagooAppPath, "app_desktop");
         process.chdir(appDesktopPath);
@@ -127,19 +129,19 @@ program
           JSON.stringify(config, null, 2)
         );
 
-           // Marquer l'installation comme terminée avec un fichier JSON
+        // Marquer l'installation comme terminée avec un fichier JSON
 
-           const dashDir = path.resolve(wagooDashAppPath, ".dash");
-           if (!fs.existsSync(dashDir)) {
-             fs.mkdirSync(dashDir);
-             hidefile.hideSync(dashDir);
-           }
-           // Configuration pour écrire dans le fichier config.json
-           const configDash = { status: "installed" };
-           fs.writeFileSync(
-             path.resolve(dashDir, "config.json"),
-             JSON.stringify(configDash, null, 2)
-           );
+        const dashDir = path.resolve(wagooDashAppPath, ".dash");
+        if (!fs.existsSync(dashDir)) {
+          fs.mkdirSync(dashDir);
+          hidefile.hideSync(dashDir);
+        }
+        // Configuration pour écrire dans le fichier config.json
+        const configDash = { status: "installed" };
+        fs.writeFileSync(
+          path.resolve(dashDir, "config.json"),
+          JSON.stringify(configDash, null, 2)
+        );
 
         console.log("🎉 Installation terminée!");
 
@@ -160,7 +162,6 @@ program
     }
   });
 
-
 // Commande pour lancer la génération du css
 
 program
@@ -169,18 +170,60 @@ program
   .action(() => {
     try {
       // Vérifier la présence du dossier .dash
-      const dashDirectory = path.join(process.cwd(), '.dash');
+      const dashDirectory = path.join(process.cwd(), ".dash");
       if (!fs.existsSync(dashDirectory)) {
-        console.error("❌ Cette commande ne fonctionne que dans un dossier du dashboard.");
+        console.error(
+          "❌ Cette commande ne fonctionne que dans un dossier du dashboard."
+        );
         process.exit(1); // Stoppe le processus si le dossier n'est pas présent
       }
 
       console.log("🖋️ Chargement du css");
 
       try {
-        execSync("npx tailwindcss -i ./assets/css/input.css -o ../static/v1/dash/css/output.css --watch", { stdio: "inherit" });
+        execSync(
+          "npx tailwindcss -i ./assets/css/input.css -o ../static/v1/dash/css/output.css --watch",
+          { stdio: "inherit" }
+        );
       } catch (error) {
-        console.error("❌ Erreur lors de l'exécution de la commande tailwindcss.");
+        console.error(
+          "❌ Erreur lors de l'exécution de la commande tailwindcss."
+        );
+        console.error(error);
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error("❌ Une erreur s'est produite lors de l'installation.");
+      console.error(error);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("build")
+  .description("Lancer tailwindcss pour générer le fichier css")
+  .action(() => {
+    try {
+      // Vérifier la présence du dossier .wagoo
+      const wagooDirectory = path.join(process.cwd(), ".wagoo");
+      if (!fs.existsSync(wagooDirectory)) {
+        console.error(
+          "❌ Cette commande ne fonctionne que dans un dossier du projet."
+        );
+        process.exit(1); // Stoppe le processus si le dossier n'est pas présent
+      }
+
+      console.log("🖋️ Chargement du css");
+
+      try {
+        const desktopApp = path.join(wagooDirectory, "desktop");
+        process.chdir(desktopApp);
+        execSync("npm run build", { stdio: "ignore" });
+        console.log("🎉 Build terminé!");
+      } catch (error) {
+        console.error(
+          "❌ Erreur lors de l'exécution de la commande tailwindcss."
+        );
         console.error(error);
         process.exit(1);
       }
