@@ -60,6 +60,14 @@ program
   .description("Installer les dépendances et configurer le projet")
   .action(() => {
     try {
+      // Vérifier si le dossier wagoo-app existe déjà
+      const wagooAppDir = path.resolve("wagoo-app");
+      if (fs.existsSync(wagooAppDir)) {
+        console.log("❌ Le dossier 'wagoo-app' existe déjà. Veuillez supprimer ou renommer ce dossier avant de réessayer.");
+        rl.close();
+        process.exit(1);
+      }
+
       // Vérifier si le projet est déjà installé
       if (checkIfInstalled()) {
         console.log(
@@ -100,7 +108,7 @@ program
         execSync("npm install", { stdio: "ignore" });
 
         // Copier le fichier .env
-        const configPath = path.join(wagooAppPath, "dash", "allcode", "config");
+        const configPath = path.join(wagooAppPath, "dash", "app", "config");
         process.chdir(configPath);
         fs.copyFileSync(".env.example", ".env");
 
@@ -164,16 +172,18 @@ program
 
 // Commande pour lancer la génération du css
 
-program
+
+
+  program
   .command("css")
   .description("Lancer tailwindcss pour générer le fichier css")
   .action(() => {
     try {
-      // Vérifier la présence du dossier .dash
-      const dashDirectory = path.join(process.cwd(), ".dash");
-      if (!fs.existsSync(dashDirectory)) {
+      // Vérifier la présence du dossier .wagoo
+      const check = path.join(process.cwd(), ".wagoo");
+      if (!fs.existsSync(check)) {
         console.error(
-          "❌ Cette commande ne fonctionne que dans un dossier du dashboard."
+          "❌ Cette commande ne fonctionne que dans un dossier du projet."
         );
         process.exit(1); // Stoppe le processus si le dossier n'est pas présent
       }
@@ -181,8 +191,8 @@ program
       console.log("🖋️ Chargement du css");
 
       try {
-        execSync(
-          "npx tailwindcss -i ./assets/css/input.css -o ../static/v1/dash/css/output.css --watch",
+         execSync(
+          "npx tailwindcss -i ./dash/assets/css/input.css -o ./static/v1/dash/css/output.css --watch",
           { stdio: "inherit" }
         );
       } catch (error) {
@@ -205,8 +215,8 @@ program
   .action(() => {
     try {
       // Vérifier la présence du dossier .wagoo
-      const wagooDirectory = path.join(process.cwd(), ".wagoo");
-      if (!fs.existsSync(wagooDirectory)) {
+      const check = path.join(process.cwd(), ".wagoo");
+      if (!fs.existsSync(check)) {
         console.error(
           "❌ Cette commande ne fonctionne que dans un dossier du projet."
         );
@@ -214,12 +224,14 @@ program
       }
 
       console.log("🖋️ Chargement du css");
-
+     const wagooDirectory = path.join(process.cwd());
       try {
         const desktopApp = path.join(wagooDirectory, "desktop");
         process.chdir(desktopApp);
-        execSync("npm run build", { stdio: "ignore" });
+        execSync("npm run build", { stdio: "inherit" });
         console.log("🎉 Build terminé!");
+        rl.close();
+        process.exit(0);
       } catch (error) {
         console.error(
           "❌ Erreur lors de l'exécution de la commande tailwindcss."
@@ -233,5 +245,44 @@ program
       process.exit(1);
     }
   });
+
+  
+program
+.command("code")
+.description("Lancer tailwindcss pour générer le fichier css")
+.action(() => {
+  try {
+    // Vérifier la présence du dossier .wagoo
+    const check = path.join(process.cwd(), ".wagoo");
+    if (!fs.existsSync(check)) {
+      console.error(
+        "❌ Cette commande ne fonctionne que dans un dossier du projet."
+      );
+      process.exit(1); // Stoppe le processus si le dossier n'est pas présent
+    }
+
+    console.log("🖋️ Chargement du css");
+   const wagooDirectory = path.join(process.cwd());
+    try {
+   
+      process.chdir(wagooDirectory);
+      execSync('"Wagoo SAAS.code-workspace"', { stdio: "ignore" });
+      console.log("🎉 Build terminé!");
+      rl.close();
+      process.exit(0);
+    } catch (error) {
+      console.error(
+        "❌ Erreur lors de l'exécution de la commande tailwindcss."
+      );
+      console.error(error);
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error("❌ Une erreur s'est produite lors de l'installation.");
+    console.error(error);
+    process.exit(1);
+  }
+});
+
 
 program.parse(process.argv);
