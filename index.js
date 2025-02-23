@@ -93,6 +93,11 @@ program
         console.log("📦 Installation des dépendances...");
 
         // Changer de répertoire pour installer les dépendances de 'dash'
+        const WagooInstall = path.join(wagooAppPath);
+        process.chdir(WagooInstall);
+        execSync("npm install", { stdio: "ignore" });
+        execSync("composer install", { stdio: "ignore" });
+
         const dashPath = path.join(wagooAppPath, "dash");
         process.chdir(dashPath);
         execSync("npm install", { stdio: "ignore" });
