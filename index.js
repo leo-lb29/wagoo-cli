@@ -19,7 +19,7 @@ const rl = readline.createInterface({
 // Fonction pour vérifier si une commande est disponible
 const checkCommand = (cmd) => {
   try {
-    execSync(cmd, { stdio: "ignore" });
+    execSync(cmd, { stdio: "inherit" });
     return true;
   } catch {
     return false;
@@ -97,21 +97,18 @@ program
         // Changer de répertoire pour installer les dépendances de 'dash'
         const WagooInstall = path.join(wagooAppPath);
         process.chdir(WagooInstall);
-        execSync("npm install", { stdio: "ignore" });
+        execSync("npm install", { stdio: "inherit" });
 
         const dashPath = path.join(wagooAppPath, "dash");
         process.chdir(dashPath);
-        execSync("npm install", { stdio: "ignore" });
-        execSync("composer install", { stdio: "ignore" });
+        execSync("npm install", { stdio: "inherit" });
+        execSync("composer install", { stdio: "inherit" });
 
-        const desktopApp = path.join(wagooAppPath, "desktop");
-        process.chdir(desktopApp);
-        execSync("npm install", { stdio: "ignore" });
+        // const desktopApp = path.join(wagooAppPath, "desktop");
+        // process.chdir(desktopApp);
+        // execSync("npm install", { stdio: "inherit" });
 
         // Changer de répertoire pour installer les dépendances de 'app_desktop'
-        const appDesktopPath = path.join(wagooAppPath, "app_desktop");
-        process.chdir(appDesktopPath);
-        execSync("npm install", { stdio: "ignore" });
 
         // Copier le fichier .env
         const configPath = path.join(wagooAppPath, "dash", "app", "config");
@@ -123,7 +120,7 @@ program
         const staticPath = path.join(wagooAppPath, "static", "v1", "dash");
         if (fs.existsSync(staticPath)) {
           process.chdir(staticPath);
-          execSync("npm install", { stdio: "ignore" });
+          execSync("npm install", { stdio: "inherit" });
         } else {
           console.error(`❌ Le répertoire ${staticPath} n'existe pas.`);
           process.exit(1);
@@ -177,6 +174,42 @@ program
   });
 
 // Commande pour lancer la génération du css
+
+program
+  .command("push")
+  .description("Add, commit and push to the repository")
+  .action(() => {
+    try {
+      // Vérifier la présence du dossier .wagoo
+      const check = path.join(process.cwd(), ".wagoo");
+      if (!fs.existsSync(check)) {
+        console.error(
+          "❌ Cette commande ne fonctionne que dans un dossier du projet."
+        );
+        process.exit(1); // Stoppe le processus si le dossier n'est pas présent
+      }
+
+      console.log("🖋️ Load for push");
+
+      try {
+        execSync("git add .", { stdio: "inherit" });
+        execSync('git commit -m "Push from wagoo-cli"', { stdio: "inherit" });
+        execSync("git push", { stdio: "inherit" });
+        console.log("🖋️ Push finish");
+        process.exit(1);
+      } catch (error) {
+        console.error(
+          "❌ Erreur lors de l'exécution de la commande tailwindcss."
+        );
+        console.error(error);
+        process.exit(1);
+      }
+    } catch (error) {
+      console.error("❌ Une erreur s'est produite lors de l'installation.");
+      console.error(error);
+      process.exit(1);
+    }
+  });
 
 program
   .command("css")
@@ -268,7 +301,7 @@ program
       const wagooDirectory = path.join(process.cwd());
       try {
         process.chdir(wagooDirectory);
-        execSync('"Wagoo SAAS.code-workspace"', { stdio: "ignore" });
+        execSync('"Wagoo SAAS.code-workspace"', { stdio: "inherit" });
         console.log("🎉 Build terminé!");
         rl.close();
         process.exit(0);
