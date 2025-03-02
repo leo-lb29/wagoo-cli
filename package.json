@@ -9,6 +9,10 @@
   "bin": {
     "wagoo": "index.js"
   },
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/leo-lb29/wagoo-cli.git"
+},
   "type": "module",
   "keywords": [],
   "author": "",
